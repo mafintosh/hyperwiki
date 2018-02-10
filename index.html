@@ -1,0 +1,176 @@
+<html>
+  <style>
+    body.new .edit {
+      display: block;
+    }
+
+    body.new #save {
+      display: inline;
+    }
+
+    body.new #new {
+      display: none;
+    }
+
+    body.new .display {
+      display: none;
+    }
+
+    .edit, #save {
+      display: none;
+    }
+
+    .edit {
+      margin-top: 25px;
+    }
+
+    .edit textarea {
+      width: 100%;
+      height: 100px;
+    }
+
+    .display pre {
+      width: 100%;
+    }
+
+    body.init #wiki {
+      display: none;
+    }
+
+    body.init #boot {
+      display: block;
+    }
+
+    #boot {
+      display: none;
+    }
+  </style>
+  <body style="display: none">
+    <div id="boot">
+      <input id="db" placeholder="Enter wiki key"> or <button id="new-wiki">make new wiki</button>
+    </div>
+
+    <div id="wiki">
+      <div style="font-family: monospace; margin-bottom: 20px;">
+        wiki key: <span id="bar-wiki-key"></span><br>
+        your key: <span id="bar-your-key"></span><br>
+        <span id="bar-status"</span>
+      </div>
+
+      <div>
+        <input id="key" placeholder="Enter key...">
+        <button id="lookup">Lookup</button>
+        <button id="new">Edit</button>
+        <button id="save">Save</button>
+        <button id="auth">Add Writer</button>
+      </div>
+
+      <div class="edit">
+        <textarea>hello</textarea>
+      </div>
+
+      <div class="display">
+        <pre></pre>
+      </div>
+    </div>
+
+    <script>
+      var hyperdb = require('hyperdb')
+      var $ = document.querySelector.bind(document)
+      var fs = require('fs')
+      var downloads = 0
+      var uploads = 0
+    
+      fs.stat('hyperwiki', function (err) {
+        document.body.style.display = 'block'
+        if (err) document.body.className = 'init'
+        else run()
+      })
+
+      var ran = false
+
+      setInterval(function () {
+        var dbKey = $('#db').value
+        if (dbKey && dbKey.length === 64 && !ran && document.body.className === 'init') {
+          ran = true
+          run(dbKey)
+        }
+
+        if (window.swarm) {
+          $('#bar-status').innerHTML = window.swarm.connections.length + ' connections, ' + downloads + ' download(s), ' + uploads + ' upload(s)'
+        }
+      }, 200)
+
+      $('#new-wiki').onclick = function () {
+        run()
+      }
+
+      function run (key) {
+        document.body.className = ''
+        var db = hyperdb('hyperwiki', key, {sparse: true})
+
+        db.on('download', function () {
+          downloads++
+        })
+
+        db.on('uploads', function () {
+          uploads++
+        })
+
+        db.on('ready', function () {
+          $('#bar-wiki-key').innerHTML = db.key.toString('hex')
+          $('#bar-your-key').innerHTML = db.local.key.toString('hex')
+
+          var swarm = window.swarm = require('hyperdiscovery')(db, {live: true})
+          
+          swarm.on('connection', function () {
+            console.log('conn')
+          })
+        })
+
+        $('#auth').onclick = function () {
+          var key = $('#key').value
+          if (key.length === 64) db.authorize(key)
+        }
+
+        $('#new').onclick = function () {
+          $('.edit textarea').innerHTML = ''
+          document.body.className = 'new'
+          var key = $('#key').value
+
+          db.get(key, function (err, nodes) {
+            if (err) throw err
+            $('.edit textarea').value = map(nodes)
+          })
+        }
+
+        $('#save').onclick = function () {
+          document.body.className = ''
+
+          var key = $('#key').value
+          var val = $('.edit textarea').value
+          db.put(key, val)
+        }
+
+        $('#lookup').onclick = function () {
+          document.body.className = ''
+
+          var key = $('#key').value
+
+          db.get(key, function (err, nodes) {
+            if (err) throw err
+            console.log(nodes)
+            $('.display pre').innerHTML = map(nodes)
+          })
+        }
+      }
+
+      function map (nodes) {
+        if (!nodes || !nodes.length) return ''
+        return nodes
+          .map(node => node.value.toString())
+          .reduce((a, b) => a)
+      }
+    </script>
+  </body>
+</html>

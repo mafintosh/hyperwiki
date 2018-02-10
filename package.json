@@ -1,0 +1,25 @@
+{
+  "name": "hyperwiki",
+  "version": "0.0.0",
+  "description": "WIP - nothing to see here",
+  "main": "index.js",
+  "dependencies": {
+    "electron": "^1.8.2",
+    "hyperdb": "^2.1.0",
+    "hyperdiscovery": "^7.0.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "electron app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mafintosh/hyperwiki.git"
+  },
+  "author": "Mathias Buus (@mafintosh)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mafintosh/hyperwiki/issues"
+  },
+  "homepage": "https://github.com/mafintosh/hyperwiki"
+}
